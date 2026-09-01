@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI補助雷達</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #0F1B2D;
+    --panel: #16283F;
+    --panel-2: #1C324D;
+    --line: #2A415E;
+    --text: #EAF0F5;
+    --text-muted: #8FA3B8;
+    --signal: #D4A64B;
+    --signal-dim: #8A7038;
+    --radius-sm: 4px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .serif { font-family: 'Noto Serif TC', serif; }
+
+  a { color: inherit; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  /* ---------- Header ---------- */
+  header {
+    border-bottom: 1px solid var(--line);
+    padding: 22px 0;
+  }
+  header .wrap {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .logo {
+    font-family: 'Noto Serif TC', serif;
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+  }
+  .logo span { color: var(--signal); }
+  nav { display: flex; gap: 28px; font-size: 14px; color: var(--text-muted); }
+  nav a:hover { color: var(--text); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 72px 0 88px;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .hero h1 {
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 22px;
+  }
+  .hero p.lead {
+    color: var(--text-muted);
+    font-size: 16px;
+    max-width: 46ch;
+    margin-bottom: 32px;
+  }
+  .cta-row { display: flex; gap: 16px; align-items: center; }
+  .btn-primary {
+    background: var(--signal);
+    color: #0F1B2D;
+    font-weight: 700;
+    padding: 13px 26px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    display: inline-block;
+    font-size: 15px;
+  }
+  .btn-ghost {
+    color: var(--text-muted);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    font-size: 14px;
+  }
+
+  /* Radar visual */
+  .radar-box { position: relative; aspect-ratio: 1 / 1; }
+  .radar-ring {
+    position: absolute; border: 1px solid var(--line); border-radius: 50%;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+  }
+  .ring-1 { width: 100%; height: 100%; }
+  .ring-2 { width: 74%; height: 74%; }
+  .ring-3 { width: 48%; height: 48%; }
+  .ring-4 { width: 22%; height: 22%; border-color: var(--signal-dim); }
+
+  .radar-sweep {
+    position: absolute; top: 50%; left: 50%;
+    width: 50%; height: 1px;
+    background: linear-gradient(90deg, var(--signal), transparent 90%);
+    transform-origin: left center;
+    animation: sweep 6s linear infinite;
+    opacity: 0.8;
+  }
+  @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .blip {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--signal);
+    display: flex; align-items: center; justify-content: center;
+    color: #0F1B2D; font-weight: 700; font-family: 'Noto Serif TC', serif;
+    box-shadow: 0 0 0 6px rgba(212,166,75,0.12);
+  }
+  .blip span { font-size: 12px; }
+
+  /* positions: closer to center = higher priority (order 1,3,4,2,5) */
+  .blip-1 { width: 34px; height: 34px; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; }
+  .blip-2 { width: 26px; height: 26px; top: 30%; left: 66%; opacity: 0.92; }
+  .blip-3 { width: 24px; height: 24px; top: 70%; left: 62%; opacity: 0.85; }
+  .blip-4 { width: 20px; height: 20px; top: 24%; left: 26%; opacity: 0.7; }
+  .blip-5 { width: 16px; height: 16px; top: 78%; left: 22%; opacity: 0.55; }
+
+  .radar-caption {
+    text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 18px;
+  }
+
+  /* ---------- Priority list ---------- */
+  .section-label {
+    color: var(--signal);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .section-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 44px;
+    max-width: 32ch;
+  }
+
+  .priority-list { display: flex; flex-direction: column; }
+
+  .item {
+    display: grid;
+    grid-template-columns: 64px 1fr 220px;
+    gap: 28px;
+    padding: 34px 0;
+    border-top: 1px solid var(--line);
+    align-items: start;
+  }
+  .priority-list .item:last-child { border-bottom: 1px solid var(--line); }
+
+  .item-rank {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 34px;
+    font-weight: 900;
+    color: var(--signal);
+    opacity: 0.5;
+  }
+  .item[data-tier="top"] .item-rank { opacity: 1; }
+
+  .item-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .item-desc { color: var(--text-muted); font-size: 14.5px; max-width: 56ch; margin-bottom: 14px; }
+  .item-tags { display: flex; gap: 10px; flex-wrap: wrap; }
+  .tag {
+    font-size: 12.5px; color: var(--text-muted);
+    border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 4px 10px;
+  }
+
+  .item-amount {
+    text-align: right;
+  }
+  .item-amount .num {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 22px; font-weight: 700; color: var(--text);
+    display: block;
+  }
+  .item-amount .unit { font-size: 12.5px; color: var(--text-muted); display: block; margin-top: 2px; }
+  .item-amount .urgency {
+    display: inline-block; margin-top: 10px;
+    font-size: 12px; color: var(--signal);
+    border-top: 1px solid var(--signal-dim);
+    padding-top: 8px;
+  }
+
+  .btn-more {
+    display: inline-block;
+    margin-top: 16px;
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: default;
+  }
+
+  /* ---------- Footer ---------- */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 40px 0 56px;
+    margin-top: 40px;
+  }
+  footer .wrap {
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px;
+  }
+  .source-list { display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; color: var(--text-muted); }
+  .source-list a { text-decoration: underline; text-underline-offset: 3px; }
+  .disclaimer { font-size: 12.5px; color: var(--text-muted); max-width: 40ch; }
+
+  @media (max-width: 820px) {
+    .hero { grid-template-columns: 1fr; gap: 40px; padding: 48px 0 56px; }
+    .hero h1 { font-size: 32px; }
+    .item { grid-template-columns: 40px 1fr; }
+    .item-amount { grid-column: 2 / 3; text-align: left; margin-top: 4px; }
+    .item-rank { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">AI補助<span>雷達</span></div>
+    <nav>
+      <span>補助排行</span>
+      <span>依產業篩選</span>
+      <span>申請時程</span>
+      <span>關於本站</span>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap" style="display:contents;">
+    <div>
+      <h1>散落在各部會公告裡的補助訊號，一次幫你定位。</h1>
+      <p class="lead">單店老闆、中小企業主最常錯過的不是資格，而是時間——公告到截止常常只有一兩個月。我們依照緊急度與適用範圍排序，讓你先看該先看的。</p>
+      <div class="cta-row">
+        <span class="btn-primary">看補助排行</span>
+        <span class="btn-ghost">依我的產業篩選</span>
+      </div>
+    </div>
+    <div>
+      <div class="radar-box">
+        <div class="radar-ring ring-1"></div>
+        <div class="radar-ring ring-2"></div>
+        <div class="radar-ring ring-3"></div>
+        <div class="radar-ring ring-4"></div>
+        <div class="radar-sweep"></div>
+        <div class="blip blip-1"></div>
+        <div class="blip blip-2"></div>
+        <div class="blip blip-3"></div>
+        <div class="blip blip-4"></div>
+        <div class="blip blip-5"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="priority" style="padding-bottom: 20px;">
+  <div class="section-label">補助排行</div>
+  <h2 class="section-title">五類政府AI補助，依單店／中小企業適用度排序</h2>
+
+  <div class="priority-list">
+
+    <div class="item" data-tier="top">
+      <div class="item-rank">1</div>
+      <div>
+        <div class="item-title">服務業AI升級方案</div>
+        <p class="item-desc">經濟部商業署主辦，直接針對單店與連鎖服務業設計，是目前對小型店家最容易申請到的一筆。餐飲、零售、生活服務業是這次的主角。</p>
+        <div class="item-tags">
+          <span class="tag">經濟部商業署</span>
+          <span class="tag">單店可申請</span>
+          <span class="tag">2026/02 啟動</span>
+        </div>
+      </div>
+      <div class="item-amount">
+        <span class="num">10萬－2,000萬</span>
+        <span class="unit">依規模分級：單店／連鎖／整合場域</span>
+        <span class="urgency">受理中，建議優先確認資格</span>
+        <button class="btn-more" type="button">了解更多 &gt;</button>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-rank">2</div>
+      <div>
+        <div class="item-title">研發型補助（SBIR／SIIR／CITD）</div>
+        <p class="item-desc">給有技術研發能量的AI團隊或準備導入客製化技術的企業。審查重點在技術創新性，需要具體的演算法突破或效能數據，不是概念型描述就能通過。</p>
+        <div class="item-tags">
+          <span class="tag">經濟部</span>
+          <span class="tag">需技術文件</span>
+          <span class="tag">審查制</span>
+        </div>
+      </div>
+      <div class="item-amount">
+        <span class="num">依案核定</span>
+        <span class="unit">依研發規模與階段而定</span>
+        <button class="btn-more" type="button">了解更多 &gt;</button>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-rank">3</div>
+      <div>
+        <div class="item-title">人才培訓類補助</div>
+        <p class="item-desc">企業辦AI內訓可補訓練費最高七成，50人以下小公司甚至有免費客製化訓練；員工也可以自己申請進修額度，不需要老闆先出資。</p>
+        <div class="item-tags">
+          <span class="tag">勞動部</span>
+          <span class="tag">企業端／個人端皆可</span>
+        </div>
+      </div>
+      <div class="item-amount">
+        <span class="num">最高七成</span>
+        <span class="unit">上限200萬｜個人3年10萬額度</span>
+        <button class="btn-more" type="button">了解更多 &gt;</button>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-rank">4</div>
+      <div>
+        <div class="item-title">製造業與傳統產業升級輔導</div>
+        <p class="item-desc">中小企業數位共好計畫、產業升級創新平台輔導計畫，適合已有一定規模、想導入智慧製造或數據分析的公司，申請門檻與文件要求高於單店方案。</p>
+        <div class="item-tags">
+          <span class="tag">經濟部</span>
+          <span class="tag">中大型中小企業</span>
+        </div>
+      </div>
+      <div class="item-amount">
+        <span class="num">依案核定</span>
+        <span class="unit">依導入規模而定</span>
+        <button class="btn-more" type="button">了解更多 &gt;</button>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-rank">5</div>
+      <div>
+        <div class="item-title">地方政府加碼資源</div>
+        <p class="item-desc">部分縣市另有自己的產業獎勵補助，設籍當地的公司可以疊加申請中央方案。內容與適用範圍每年會調整，建議申請前先向所在地產業局確認。</p>
+        <div class="item-tags">
+          <span class="tag">地方政府</span>
+          <span class="tag">可與中央方案疊加</span>
+        </div>
+      </div>
+      <div class="item-amount">
+        <span class="num">依縣市而定</span>
+        <span class="unit">需另洽當地產業局</span>
+        <button class="btn-more" type="button">了解更多 &gt;</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="source-list">
+      <strong style="color: var(--text); font-weight: 700; margin-bottom: 4px;">官方資料來源</strong>
+      <span>經濟部商業署－服務業AI升級方案</span>
+      <span>數位發展部</span>
+      <span>勞動部－補助企業辦訓網</span>
+    </div>
+    <p class="disclaimer">方案名稱與內容每年調整，送件前請以各部會當期公告為準。本站僅整理排序，不代表核准結果。</p>
+  </div>
+</footer>
+
+</body>
+</html>
