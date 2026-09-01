@@ -1,0 +1,61 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import subsidies from '../../data/subsidies.json';
+
+const requested = Astro.url.searchParams.get('category');
+const categories = [...new Set(subsidies.map((s) => s.category))];
+const active = categories.includes(requested) ? requested : null;
+
+const list = (active ? subsidies.filter((s) => s.category === active) : subsidies)
+  .slice()
+  .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
+function formatDeadline(dateStr) {
+  const d = new Date(dateStr);
+  const days = Math.ceil((d - new Date()) / 86400000);
+  const label = d.toLocaleDateString('zh-TW', { month: 'long', day: 'numeric' });
+  return { label, days };
+}
+---
+
+<Layout title="補助方案" description="彙整各政府單位目前開放中的補助與獎助方案。">
+  <div class="section-head" style="margin-top: 40px;">
+    <h2>補助方案清單</h2>
+  </div>
+
+  <div class="filter-bar">
+    <a href="/subsidies/" aria-current={active === null}>全部</a>
+    {categories.map((c) => (
+      <a href={`/subsidies/?category=${encodeURIComponent(c)}`} aria-current={active === c}>{c}</a>
+    ))}
+  </div>
+
+  <ul class="subsidy-list">
+    {list.map((s, i) => {
+      const { label, days } = formatDeadline(s.deadline);
+      return (
+        <li>
+          <a class="subsidy-row" href={s.url} target="_blank" rel="noopener">
+            <span class="subsidy-index">{String(i + 1).padStart(2, '0')}</span>
+            <div>
+              <p class="subsidy-title">{s.title}</p>
+              <p class="subsidy-summary">{s.summary}</p>
+              <div class="subsidy-tags">
+                <span class="tag">{s.category}</span>
+                <span class="tag agency">{s.agency}</span>
+              </div>
+            </div>
+            <div class="subsidy-meta">
+              <div class="subsidy-amount">{s.amount}</div>
+              <span class={`deadline ${days <= 14 ? 'urgent' : ''}`}>
+                {days > 0 ? `截止 ${label}` : '已截止'}
+              </span>
+            </div>
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+
+  {list.length === 0 && <p style="padding: 40px 0; color: var(--ink-soft);">目前這個分類還沒有資料。</p>}
+</Layout>

@@ -1,0 +1,23 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog')).sort((a, b) => b.data.pubDate - a.data.pubDate);
+---
+
+<Layout title="觀察筆記" description="關於補助方案趨勢與申請心得的整理文章。">
+  <div class="section-head" style="margin-top: 40px;">
+    <h2>觀察筆記</h2>
+  </div>
+  <ul class="post-list">
+    {posts.map((post) => (
+      <li>
+        <a class="post-row" href={`/blog/${post.slug}/`}>
+          <p class="post-date">{post.data.pubDate.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p class="post-title">{post.data.title}</p>
+          <p class="post-desc">{post.data.description}</p>
+        </a>
+      </li>
+    ))}
+  </ul>
+</Layout>
