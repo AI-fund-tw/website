@@ -1,426 +1,565 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI補助雷達</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>亨起流通</title>
+<meta name="description" content="亨起流通專注於提供台灣實體零售門市OMO全通路整合開店服務，協助店家與品牌商實現自動化與永續成長。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+body{margin:0;font-family:'Noto Sans TC',system-ui,-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;background:#F5F7FA;color:#0F1A2E;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p{margin:0}
+button,a,input,textarea{font-family:inherit}
+button{cursor:pointer}
+.btn:hover{filter:brightness(.94)}
+.navbtn:hover{opacity:.8}
+.ghost:hover{background:rgba(255,255,255,.1)}
+.ghostd:hover{background:rgba(15,26,46,.06)}
+:focus-visible{outline:3px solid #2F6FEB;outline-offset:2px}
+.field:focus{border-color:#0F1A2E}
 
-  :root {
-    --bg: #0F1B2D;
-    --panel: #16283F;
-    --panel-2: #1C324D;
-    --line: #2A415E;
-    --text: #EAF0F5;
-    --text-muted: #8FA3B8;
-    --signal: #D4A64B;
-    --signal-dim: #8A7038;
-    --radius-sm: 4px;
-    --pad-x: clamp(20px, 6vw, 40px);
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html { -webkit-text-size-adjust: 100%; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Noto Sans TC', sans-serif;
-    line-height: 1.7;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
-  }
-
-  h1, h2, h3, .serif { font-family: 'Noto Serif TC', serif; }
-
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 var(--pad-x); }
-
-  /* ---------- Header ---------- */
-  header {
-    border-bottom: 1px solid var(--line);
-    padding: 20px 0;
-  }
-  header .wrap {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    row-gap: 12px;
-    column-gap: 20px;
-  }
-  .logo {
-    font-family: 'Noto Serif TC', serif;
-    font-weight: 900;
-    font-size: clamp(18px, 3.2vw, 22px);
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-  }
-  .logo span { color: var(--signal); }
-  nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px 24px;
-    font-size: 13.5px;
-    color: var(--text-muted);
-  }
-
-  /* ---------- Hero ---------- */
-  .hero {
-    padding: clamp(48px, 8vw, 88px) 0 clamp(40px, 7vw, 88px);
-  }
-  .hero .wrap {
-    display: grid;
-    grid-template-columns: 1.05fr 0.95fr;
-    gap: clamp(32px, 6vw, 56px);
-    align-items: center;
-  }
-  .hero h1 {
-    font-size: clamp(28px, 4.2vw, 44px);
-    font-weight: 700;
-    line-height: 1.4;
-    margin-bottom: 20px;
-    letter-spacing: 0.01em;
-  }
-  .hero p.lead {
-    color: var(--text-muted);
-    font-size: 15.5px;
-    max-width: 44ch;
-    margin-bottom: 28px;
-  }
-  .cta-row { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; }
-  .btn-primary {
-    background: var(--signal);
-    color: #0F1B2D;
-    font-weight: 700;
-    padding: 13px 26px;
-    border-radius: var(--radius-sm);
-    display: inline-block;
-    font-size: 14.5px;
-  }
-  .btn-ghost {
-    color: var(--text-muted);
-    text-decoration: underline;
-    text-underline-offset: 4px;
-    font-size: 14px;
-    padding: 13px 2px;
-    display: inline-block;
-  }
-
-  /* Radar visual */
-  .radar-box {
-    position: relative;
-    aspect-ratio: 1 / 1;
-    width: 100%;
-    max-width: 420px;
-    margin: 0 auto;
-  }
-  .radar-ring {
-    position: absolute; border: 1px solid var(--line); border-radius: 50%;
-    top: 50%; left: 50%; transform: translate(-50%, -50%);
-  }
-  .ring-1 { width: 100%; height: 100%; }
-  .ring-2 { width: 74%; height: 74%; }
-  .ring-3 { width: 48%; height: 48%; }
-  .ring-4 { width: 22%; height: 22%; border-color: var(--signal-dim); }
-
-  .radar-sweep {
-    position: absolute; top: 50%; left: 50%;
-    width: 50%; height: 1px;
-    background: linear-gradient(90deg, var(--signal), transparent 90%);
-    transform-origin: left center;
-    animation: sweep 6s linear infinite;
-    opacity: 0.8;
-  }
-  @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-  .blip {
-    position: absolute;
-    border-radius: 50%;
-    background: var(--signal);
-    box-shadow: 0 0 0 6px rgba(212,166,75,0.12);
-  }
-
-  /* positions: closer to center = higher priority (order 1,3,4,2,5) */
-  .blip-1 { width: 34px; height: 34px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-  .blip-2 { width: 26px; height: 26px; top: 30%; left: 64%; opacity: 0.92; }
-  .blip-3 { width: 24px; height: 24px; top: 68%; left: 60%; opacity: 0.85; }
-  .blip-4 { width: 20px; height: 20px; top: 25%; left: 28%; opacity: 0.7; }
-  .blip-5 { width: 16px; height: 16px; top: 76%; left: 25%; opacity: 0.55; }
-
-  /* ---------- Priority list ---------- */
-  .priority-section { padding: clamp(8px, 2vw, 20px) 0 clamp(48px, 8vw, 80px); }
-
-  .section-label {
-    color: var(--signal);
-    font-size: 13px;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-  .section-title {
-    font-size: clamp(22px, 3.4vw, 28px);
-    font-weight: 700;
-    line-height: 1.45;
-    margin-bottom: clamp(32px, 5vw, 44px);
-    max-width: 32ch;
-  }
-
-  .priority-list { display: flex; flex-direction: column; }
-
-  .item {
-    display: grid;
-    grid-template-columns: 56px 1fr 210px;
-    gap: 24px 28px;
-    padding: clamp(28px, 4vw, 34px) 0;
-    border-top: 1px solid var(--line);
-    align-items: start;
-  }
-  .priority-list .item:last-child { border-bottom: 1px solid var(--line); }
-
-  .item-rank {
-    font-family: 'Noto Serif TC', serif;
-    font-size: 32px;
-    font-weight: 900;
-    color: var(--signal);
-    opacity: 0.5;
-    line-height: 1;
-  }
-  .item[data-tier="top"] .item-rank { opacity: 1; }
-
-  .item-title { font-size: 18.5px; font-weight: 700; margin-bottom: 10px; line-height: 1.5; }
-  .item-desc { color: var(--text-muted); font-size: 14.5px; max-width: 56ch; margin-bottom: 16px; }
-  .item-tags { display: flex; gap: 10px; flex-wrap: wrap; }
-  .tag {
-    font-size: 12.5px; color: var(--text-muted);
-    border: 1px solid var(--line); border-radius: var(--radius-sm);
-    padding: 5px 11px;
-    line-height: 1.4;
-  }
-
-  .item-amount { text-align: right; }
-  .item-amount .num {
-    font-family: 'Noto Serif TC', serif;
-    font-size: 20px; font-weight: 700; color: var(--text);
-    display: block;
-  }
-  .item-amount .unit { font-size: 12.5px; color: var(--text-muted); display: block; margin-top: 6px; line-height: 1.6; }
-  .item-amount .urgency {
-    display: block; margin-top: 14px;
-    font-size: 12px; color: var(--signal);
-    border-top: 1px solid var(--signal-dim);
-    padding-top: 10px;
-    line-height: 1.6;
-  }
-
-  .btn-more {
-    display: inline-block;
-    margin-top: 18px;
-    background: none;
-    border: 1px solid var(--line);
-    color: var(--text);
-    font-family: 'Noto Sans TC', sans-serif;
-    font-size: 13px;
-    padding: 9px 18px;
-    border-radius: var(--radius-sm);
-    cursor: default;
-  }
-
-  /* ---------- Footer ---------- */
-  footer {
-    border-top: 1px solid var(--line);
-    padding: clamp(32px, 6vw, 40px) 0 clamp(44px, 8vw, 56px);
-  }
-  footer .wrap {
-    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 28px 40px;
-  }
-  .source-list { display: flex; flex-direction: column; gap: 9px; font-size: 13.5px; color: var(--text-muted); }
-  .source-title { color: var(--text); font-weight: 700; margin-bottom: 4px; }
-  .disclaimer { font-size: 12.5px; color: var(--text-muted); max-width: 40ch; line-height: 1.75; }
-
-  /* ---------- Responsive breakpoints ---------- */
-  @media (max-width: 860px) {
-    .hero .wrap { grid-template-columns: 1fr; }
-    .radar-box { max-width: 320px; }
-    .item { grid-template-columns: 44px 1fr; }
-    .item-amount {
-      grid-column: 1 / -1;
-      text-align: left;
-      margin-top: 4px;
-      padding-left: 68px;
-    }
-    .item-amount .urgency { border-top: none; padding-top: 0; margin-top: 10px; }
-  }
-
-  @media (max-width: 560px) {
-    :root { --pad-x: 20px; }
-    nav { gap: 8px 18px; font-size: 13px; }
-    .hero { padding-top: 40px; }
-    .item {
-      grid-template-columns: 1fr;
-      row-gap: 14px;
-    }
-    .item-rank { font-size: 26px; }
-    .item-amount { padding-left: 0; }
-    footer .wrap { flex-direction: column; gap: 24px; }
-    .disclaimer { max-width: none; }
-  }
-
-  @media (max-width: 380px) {
-    .hero h1 { font-size: 24px; }
-    .cta-row { flex-direction: column; align-items: flex-start; gap: 12px; }
-  }
+[hidden]{display:none !important}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="wrap">
-    <div class="logo">AI補助<span>雷達</span></div>
-    <nav>
-      <span>補助排行</span>
-      <span>依產業篩選</span>
-      <span>申請時程</span>
-      <span>關於本站</span>
-    </nav>
-  </div>
+
+<div style="display: flex; flex-direction: column; min-height: 100%; background: #F5F7FA">
+
+<!-- HEADER -->
+<header style="background: #FFFFFF; border-bottom: 1px solid #DDE3EC">
+<div style="max-width: 1200px; margin: 0 auto; padding: 14px clamp(16px, 4vw, 48px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px">
+<button type="button" data-go="about" aria-label="亨起流通 首頁" style="display: flex; align-items: center; gap: 12px; background: transparent; border: 0; padding: 0; min-height: 44px; color: #0F1A2E">
+<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#0F1A2E"></rect><path d="M9 22 L17 11 L25 22" stroke="#F2A33A" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="font-size: 22px; font-weight: 900; letter-spacing: 0.02em">亨起流通</span>
+</button>
+<nav aria-label="主選單" style="display: flex; flex-wrap: wrap; gap: 4px">
+<button type="button" class="navbtn" data-nav="about" data-go="about">關於亨起</button>
+<button type="button" class="navbtn" data-nav="product" data-go="product">產品</button>
+<button type="button" class="navbtn" data-nav="custom" data-go="custom">客製化開發</button>
+<button type="button" class="navbtn" data-nav="contact" data-go="contact">聯繫我們</button>
+</nav>
+</div>
 </header>
 
-<section class="hero">
-  <div class="wrap">
-    <div>
-      <h1>散落在各部會公告裡的補助訊號，一次幫你定位。</h1>
-      <p class="lead">單店老闆、中小企業主最常錯過的不是資格，而是時間——公告到截止常常只有一兩個月。我們依照緊急度與適用範圍排序，讓你先看該先看的。</p>
-      <div class="cta-row">
-        <span class="btn-primary">看補助排行</span>
-        <span class="btn-ghost">依我的產業篩選</span>
-      </div>
-    </div>
-    <div>
-      <div class="radar-box">
-        <div class="radar-ring ring-1"></div>
-        <div class="radar-ring ring-2"></div>
-        <div class="radar-ring ring-3"></div>
-        <div class="radar-ring ring-4"></div>
-        <div class="radar-sweep"></div>
-        <div class="blip blip-1"></div>
-        <div class="blip blip-2"></div>
-        <div class="blip blip-3"></div>
-        <div class="blip blip-4"></div>
-        <div class="blip blip-5"></div>
-      </div>
-    </div>
-  </div>
+<main style="flex: 1 1 auto">
+
+<!-- ===================== 關於亨起 ===================== -->
+<div data-page="about">
+<section style="background: #0F1A2E; color: #FFFFFF">
+<div style="max-width: 1200px; margin: 0 auto; padding: clamp(48px, 8vw, 104px) clamp(16px, 4vw, 48px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 56px; align-items: center">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.14em; color: #F2A33A">關於亨起</div>
+<h1 style="margin-top: 18px; font-size: clamp(36px, 5.2vw, 68px); line-height: 1.15; font-weight: 900">讓門市與線上，<br>成為同一個生意</h1>
+<p style="margin-top: 28px; font-size: 18px; line-height: 1.95; color: #C9D2E0; max-width: 34em">亨起流通專注於提供台灣實體零售門市OMO全通路整合開店服務，以具備高度彈性的數位營運系統，協助您打造高效、穩定且快速的全新商業模式，讓店家與品牌商實現自動化與永續成長。</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px">
+<button type="button" class="btn" data-go="product" style="min-height: 52px; padding: 0 28px; border-radius: 999px; border: 0; font-size: 16px; font-weight: 700; background: #F2A33A; color: #0F1A2E">了解我們的產品</button>
+<button type="button" class="ghost" data-go="contact" style="min-height: 52px; padding: 0 28px; border-radius: 999px; border: 1.5px solid #5B6B8C; font-size: 16px; font-weight: 700; background: transparent; color: #FFFFFF">聯繫我們</button>
+</div>
+</div>
+<div style="background: #17284A; border: 1px solid #2A3D66; border-radius: 24px; padding: clamp(20px, 3vw, 32px)">
+<div style="font-size: 13px; font-weight: 700; letter-spacing: 0.14em; color: #9FB0CB">OMO 全通路整合</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px">
+<div style="background: #0F1A2E; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px">
+<div style="font-size: 18px; font-weight: 700">實體門市</div>
+<div style="margin-top: 6px; font-size: 14px; line-height: 1.6; color: #9FB0CB">POS 與多門市管理</div>
+</div>
+<div style="background: #0F1A2E; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px">
+<div style="font-size: 18px; font-weight: 700">品牌官網</div>
+<div style="margin-top: 6px; font-size: 14px; line-height: 1.6; color: #9FB0CB">全客製版型的電商網站</div>
+</div>
+<div style="background: #0F1A2E; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px">
+<div style="font-size: 18px; font-weight: 700">社群電商</div>
+<div style="margin-top: 6px; font-size: 14px; line-height: 1.6; color: #9FB0CB">FB／IG 留言 +1 接單</div>
+</div>
+<div style="background: #0F1A2E; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px">
+<div style="font-size: 18px; font-weight: 700">庫存與會員</div>
+<div style="margin-top: 6px; font-size: 14px; line-height: 1.6; color: #9FB0CB">多倉庫、會員同步管理</div>
+</div>
+</div>
+<div style="margin-top: 12px; background: #F2A33A; color: #0F1A2E; border-radius: 14px; padding: 18px 20px; text-align: center; font-size: 17px; font-weight: 900">數位營運系統 ｜ 資料同步・流程自動化</div>
+</div>
+</div>
 </section>
 
-<section class="wrap priority-section" id="priority">
-  <div class="section-label">補助排行</div>
-  <h2 class="section-title">五類政府AI補助，依單店／中小企業適用度排序</h2>
-
-  <div class="priority-list">
-
-    <div class="item" data-tier="top">
-      <div class="item-rank">1</div>
-      <div>
-        <div class="item-title">服務業AI升級方案</div>
-        <p class="item-desc">經濟部商業署主辦，直接針對單店與連鎖服務業設計，是目前對小型店家最容易申請到的一筆。餐飲、零售、生活服務業是這次的主角。</p>
-        <div class="item-tags">
-          <span class="tag">經濟部商業署</span>
-          <span class="tag">單店可申請</span>
-          <span class="tag">2026/02 啟動</span>
-        </div>
-      </div>
-      <div class="item-amount">
-        <span class="num">10萬－2,000萬</span>
-        <span class="unit">依規模分級：單店／連鎖／整合場域</span>
-        <span class="urgency">受理中，建議優先確認資格</span>
-        <button class="btn-more" type="button">了解更多 &gt;</button>
-      </div>
-    </div>
-
-    <div class="item">
-      <div class="item-rank">2</div>
-      <div>
-        <div class="item-title">研發型補助（SBIR／SIIR／CITD）</div>
-        <p class="item-desc">給有技術研發能量的AI團隊或準備導入客製化技術的企業。審查重點在技術創新性，需要具體的演算法突破或效能數據，不是概念型描述就能通過。</p>
-        <div class="item-tags">
-          <span class="tag">經濟部</span>
-          <span class="tag">需技術文件</span>
-          <span class="tag">審查制</span>
-        </div>
-      </div>
-      <div class="item-amount">
-        <span class="num">依案核定</span>
-        <span class="unit">依研發規模與階段而定</span>
-        <button class="btn-more" type="button">了解更多 &gt;</button>
-      </div>
-    </div>
-
-    <div class="item">
-      <div class="item-rank">3</div>
-      <div>
-        <div class="item-title">人才培訓類補助</div>
-        <p class="item-desc">企業辦AI內訓可補訓練費最高七成，50人以下小公司甚至有免費客製化訓練；員工也可以自己申請進修額度，不需要老闆先出資。</p>
-        <div class="item-tags">
-          <span class="tag">勞動部</span>
-          <span class="tag">企業端／個人端皆可</span>
-        </div>
-      </div>
-      <div class="item-amount">
-        <span class="num">最高七成</span>
-        <span class="unit">上限200萬｜個人3年10萬額度</span>
-        <button class="btn-more" type="button">了解更多 &gt;</button>
-      </div>
-    </div>
-
-    <div class="item">
-      <div class="item-rank">4</div>
-      <div>
-        <div class="item-title">製造業與傳統產業升級輔導</div>
-        <p class="item-desc">中小企業數位共好計畫、產業升級創新平台輔導計畫，適合已有一定規模、想導入智慧製造或數據分析的公司，申請門檻與文件要求高於單店方案。</p>
-        <div class="item-tags">
-          <span class="tag">經濟部</span>
-          <span class="tag">中大型中小企業</span>
-        </div>
-      </div>
-      <div class="item-amount">
-        <span class="num">依案核定</span>
-        <span class="unit">依導入規模而定</span>
-        <button class="btn-more" type="button">了解更多 &gt;</button>
-      </div>
-    </div>
-
-    <div class="item">
-      <div class="item-rank">5</div>
-      <div>
-        <div class="item-title">地方政府加碼資源</div>
-        <p class="item-desc">部分縣市另有自己的產業獎勵補助，設籍當地的公司可以疊加申請中央方案。內容與適用範圍每年會調整，建議申請前先向所在地產業局確認。</p>
-        <div class="item-tags">
-          <span class="tag">地方政府</span>
-          <span class="tag">可與中央方案疊加</span>
-        </div>
-      </div>
-      <div class="item-amount">
-        <span class="num">依縣市而定</span>
-        <span class="unit">需另洽當地產業局</span>
-        <button class="btn-more" type="button">了解更多 &gt;</button>
-      </div>
-    </div>
-
-  </div>
+<section>
+<div style="max-width: 1200px; margin: 0 auto; padding: clamp(56px, 8vw, 96px) clamp(16px, 4vw, 48px)">
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.14em; color: #5B667A">我們的方式</div>
+<h2 style="margin-top: 14px; font-size: clamp(28px, 3.6vw, 44px); line-height: 1.3; font-weight: 900; max-width: 18em">四個關鍵字，支撐門市的長期成長</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 20px; margin-top: 44px">
+<div style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 18px; padding: 28px">
+<div style="font-size: 14px; font-weight: 700; color: #5B667A">01</div>
+<h3 style="margin-top: 14px; font-size: 26px; font-weight: 900">高效</h3>
+<p style="margin-top: 12px; font-size: 16px; line-height: 1.85; color: #3B475C">門市、官網與社群訂單集中處理，減少重複作業。</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 18px; padding: 28px">
+<div style="font-size: 14px; font-weight: 700; color: #5B667A">02</div>
+<h3 style="margin-top: 14px; font-size: 26px; font-weight: 900">穩定</h3>
+<p style="margin-top: 12px; font-size: 16px; line-height: 1.85; color: #3B475C">以清楚的資料流與作業流程，支撐每日營運。</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 18px; padding: 28px">
+<div style="font-size: 14px; font-weight: 700; color: #5B667A">03</div>
+<h3 style="margin-top: 14px; font-size: 26px; font-weight: 900">快速</h3>
+<p style="margin-top: 12px; font-size: 16px; line-height: 1.85; color: #3B475C">縮短新通路的啟動時間，更快建立全新商業模式。</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 18px; padding: 28px">
+<div style="font-size: 14px; font-weight: 700; color: #5B667A">04</div>
+<h3 style="margin-top: 14px; font-size: 26px; font-weight: 900">永續成長</h3>
+<p style="margin-top: 12px; font-size: 16px; line-height: 1.85; color: #3B475C">自動化的數位營運，讓店家與品牌商持續擴展。</p>
+</div>
+</div>
+</div>
 </section>
 
-<footer>
-  <div class="wrap">
-    <div class="source-list">
-      <div class="source-title">官方資料來源</div>
-      <span>經濟部商業署－服務業AI升級方案</span>
-      <span>數位發展部</span>
-      <span>勞動部－補助企業辦訓網</span>
-    </div>
-    <p class="disclaimer">方案名稱與內容每年調整，送件前請以各部會當期公告為準。本站僅整理排序，不代表核准結果。</p>
-  </div>
+<section style="background: #F2A33A">
+<div style="max-width: 1200px; margin: 0 auto; padding: 44px clamp(16px, 4vw, 48px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 32px">
+<h2 style="font-size: clamp(24px, 3vw, 34px); line-height: 1.35; font-weight: 900; color: #0F1A2E">準備讓門市接軌全通路？</h2>
+<button type="button" class="btn" data-go="contact" style="min-height: 52px; padding: 0 30px; border-radius: 999px; border: 0; font-size: 16px; font-weight: 700; background: #0F1A2E; color: #FFFFFF">聯繫我們</button>
+</div>
+</section>
+</div>
+
+<!-- ===================== 產品 ===================== -->
+<div data-page="product" hidden>
+<section style="background: #FFFFFF; border-bottom: 1px solid #DDE3EC">
+<div style="max-width: 1200px; margin: 0 auto; padding: clamp(48px, 7vw, 88px) clamp(16px, 4vw, 48px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 48px; align-items: center">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.14em; color: #5B667A">SHOPNEX 網路開店服務</div>
+<h1 style="margin-top: 16px; font-size: clamp(34px, 4.8vw, 60px); line-height: 1.18; font-weight: 900">打造專屬品牌的線上商店</h1>
+<div style="margin-top: 16px; font-size: 20px; font-weight: 700">快速開店｜自由設計｜安心成交</div>
+<p style="margin-top: 20px; font-size: 17px; line-height: 1.9; color: #3B475C; max-width: 34em">從品牌官網設計、商品上架到訂單管理，一套工具協助你快速開店，打造順暢又能持續成長的購物體驗。</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px">
+<a class="btn" href="https://www.shopnex.tw/pages/website" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 28px; border-radius: 999px; font-size: 16px; font-weight: 700; background: #0F1A2E; color: #FFFFFF; text-decoration: none">前往 SHOPNEX 官網</a>
+<button type="button" class="ghostd" data-go="contact" style="min-height: 52px; padding: 0 28px; border-radius: 999px; border: 1.5px solid #0F1A2E; font-size: 16px; font-weight: 700; background: transparent; color: #0F1A2E">預約開店諮詢</button>
+</div>
+</div>
+<div style="background: #0F1A2E; color: #FFFFFF; border-radius: 24px; padding: clamp(20px, 3vw, 32px)">
+<div style="font-size: 13px; font-weight: 700; letter-spacing: 0.14em; color: #9FB0CB">一個後台，管理所有銷售場景</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px">
+<div style="background: #17284A; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px; font-size: 17px; font-weight: 700">FB／IG 留言 +1</div>
+<div style="background: #17284A; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px; font-size: 17px; font-weight: 700">LINE 團購接單</div>
+<div style="background: #17284A; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px; font-size: 17px; font-weight: 700">POS 門市整合</div>
+<div style="background: #17284A; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px; font-size: 17px; font-weight: 700">AI 輔助營運</div>
+</div>
+<div style="margin-top: 12px; font-size: 14px; line-height: 1.7; color: #9FB0CB">不懂技術，也能快速建立品牌官網；從商品上架到訂單管理，一站完成。</div>
+</div>
+</div>
+</section>
+
+<section>
+<div style="max-width: 1200px; margin: 0 auto; padding: clamp(48px, 7vw, 88px) clamp(16px, 4vw, 48px); display: flex; flex-direction: column; gap: 20px">
+<article style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 40px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px 48px">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: #5B667A">01 ・ 視覺 AI</div>
+<h3 style="margin-top: 12px; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.3; font-weight: 900">打造看得到的購物體驗</h3>
+</div>
+<div>
+<p style="font-size: 17px; line-height: 1.85; color: #3B475C">別再只讓顧客看商品圖，SHOPNEX獨家視覺 AI，讓線上購物也能像逛實體店一樣，看得到、體驗得到，幫助顧客更快找到想買的商品，提升下單意願。</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px">
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">AI 試衣間</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">AI 空間設計</span>
+</div>
+</div>
+</article>
+<article style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 40px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px 48px">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: #5B667A">02 ・ OMO通路整合</div>
+<h3 style="margin-top: 12px; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.3; font-weight: 900">官網與門市整合，打造循環銷售模式</h3>
+</div>
+<div>
+<p style="font-size: 17px; line-height: 1.85; color: #3B475C">整合線上官網、線下POS及品牌APP，透過循環銷售導流，打造營收新高度。</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px">
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">POS 系統整合</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">會員同步管理</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">多門市管理</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">指定通路優惠</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">會員同步整合</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">會員指定優惠</span>
+</div>
+</div>
+</article>
+<article style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 40px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px 48px">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: #5B667A">03 ・ 網站設計</div>
+<h3 style="margin-top: 12px; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.3; font-weight: 900">獨家AI網站設計</h3>
+</div>
+<div>
+<p style="font-size: 17px; line-height: 1.85; color: #3B475C">一句話快速生成品牌官網，自動優化 SEO 與 GEO，兼顧搜尋曝光與網站載入速度，自由設計頁面與區塊，不受固定套版限制，打造真正專屬於品牌的電商網站。</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px">
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">100% 全客製版型</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">最佳化SEO與GEO</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">更快的載入速度</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">SSL 安全憑證</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">RWD響應式設計</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">獨立網域</span>
+</div>
+</div>
+</article>
+<article style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 40px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px 48px">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: #5B667A">04 ・ 行銷推廣</div>
+<h3 style="margin-top: 12px; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.3; font-weight: 900">強大行銷工具，助您精準觸達目標客群</h3>
+</div>
+<div>
+<p style="font-size: 17px; line-height: 1.85; color: #3B475C">從會員經營、優惠活動到社群推廣，一站式整合讓行銷更輕鬆。</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px">
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">EDM、簡訊、LINE推播</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">滿額折扣、滿額則送</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">組合活動、階層式優惠</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">購物金、點數商城</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">隱形賣場、一頁商店</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">分潤連結、推薦人活動</span>
+</div>
+</div>
+</article>
+<article style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 40px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px 48px">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: #5B667A">05 ・ 庫存銷售</div>
+<h3 style="margin-top: 12px; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.3; font-weight: 900">精準庫存管理，優化供應鏈效率</h3>
+</div>
+<div>
+<p style="font-size: 17px; line-height: 1.85; color: #3B475C">支援多倉庫數據同步、智能補貨提醒與銷售熱區分析，搭配進銷存模組，與多元電商通路串接，全面掌控庫存動態，降低成本，提高運營效率！</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px">
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">多倉庫庫存管理</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">進貨 / 調撥 / 盤點</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">庫存補貨提醒</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">門市 / 庫存點管理</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">蝦皮商品同步整合</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">即時庫存供應狀態</span>
+</div>
+</div>
+</article>
+<article style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 40px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px 48px">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: #5B667A">06 ・ 社群電商</div>
+<h3 style="margin-top: 12px; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.3; font-weight: 900">直播互動銷售，從各社群輕鬆吸引更多粉絲</h3>
+</div>
+<div>
+<p style="font-size: 17px; line-height: 1.85; color: #3B475C">整合Facebook、Instagram、直播與貼文功能，結合+1留言自動抓單系統，讓互動變成交易，快速提升銷售轉化率！</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px">
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">Facebook 直播+1</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">Facebook 留言+1</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">Instagram 直播+1</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">Instagram 留言+1</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">Facebook 自動回覆</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">Instagram 自動回覆</span>
+</div>
+</div>
+</article>
+<article style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 40px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px 48px">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: #5B667A">07 ・ AI運營</div>
+<h3 style="margin-top: 12px; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.3; font-weight: 900">全能 AI 輔助開店</h3>
+</div>
+<div>
+<p style="font-size: 17px; line-height: 1.85; color: #3B475C">SHOPNEX 獨家垂直整合自有系統，從前台體驗到後台決策，全方位由 AI 動能驅動，協助您打造高效、穩定且快速變現的全新商業模式。</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px">
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">AI客服系統</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">AI商品推薦</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">AI數據分析</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">AI行為代理</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">AI試衣間</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">AI空間設計</span>
+</div>
+</div>
+</article>
+<article style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 40px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px 48px">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: #5B667A">08 ・ 後台APP</div>
+<h3 style="margin-top: 12px; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.3; font-weight: 900">行動後台系統</h3>
+</div>
+<div>
+<p style="font-size: 17px; line-height: 1.85; color: #3B475C">SHOPNEX獨家行動後台，訊息即時推播、客服回覆、庫存管理、訂單管理、促銷設定、POS銷售，所有功能一機搞定。</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px">
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">訊息即時推播</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">客服回覆</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">庫存管理</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">訂單管理</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">促銷設定</span>
+<span style="display: inline-block; padding: 8px 14px; border-radius: 999px; background: #EEF2F7; color: #0F1A2E; font-size: 15px; font-weight: 500">POS銷售</span>
+</div>
+</div>
+</article>
+</div>
+</section>
+
+<section style="background: #0F1A2E; color: #FFFFFF">
+<div style="max-width: 1200px; margin: 0 auto; padding: clamp(56px, 8vw, 96px) clamp(16px, 4vw, 48px)">
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.14em; color: #F2A33A">TRUSTED BY BRANDS</div>
+<h2 style="margin-top: 14px; font-size: clamp(28px, 3.6vw, 44px); line-height: 1.3; font-weight: 900">眾多品牌的一致選擇</h2>
+<p style="margin-top: 16px; font-size: 17px; line-height: 1.9; color: #C9D2E0; max-width: 34em">從單一門市到多據點營運，與各領域品牌一起把顧客關係做得更長、更深。</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 36px">
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">資生堂</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">博仕優</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">精臣</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">培菓寵物</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">御鄉元</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">國華高爾夫</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">尾巴先生</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">ROKU選品</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">好迷家居</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">酶開研酵</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">CUBI 童裝</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">Wudi服飾</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">MG服飾</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">BAOBAO童裝</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">苡娜寶貝</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">屏榮坊鰻魚</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">智順科技</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">帝暘有限公司</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">Kbf韓食批發</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">HAIPET海朔寵物</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">UPTOY潮玩</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">玩物暴走</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">凱倫水晶</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">達嗑膳坊</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">果鮮生</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">RINATO服飾</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">8688服飾</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">國民奶奶服飾</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">Lagatita舞皂</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">REGALO飾品</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">巴杜寵物</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">啾蛙團購</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">熱火體育</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">鼻舒眠</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">配哈皮</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">諾曼麵包</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">Good Day 選品</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">蟲心初現</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">卡芬園藝</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">金品文創</span>
+<span style="display: inline-block; padding: 10px 18px; border: 1px solid #2A3D66; border-radius: 999px; background: #17284A; color: #E3E9F2; font-size: 15px">嘉義竹大商行</span>
+</div>
+</div>
+</section>
+
+<section style="background: #F2A33A">
+<div style="max-width: 1200px; margin: 0 auto; padding: 44px clamp(16px, 4vw, 48px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 32px">
+<h2 style="font-size: clamp(24px, 3vw, 34px); line-height: 1.35; font-weight: 900; color: #0F1A2E">想了解適合您的開店方式？</h2>
+<button type="button" class="btn" data-go="contact" style="min-height: 52px; padding: 0 30px; border-radius: 999px; border: 0; font-size: 16px; font-weight: 700; background: #0F1A2E; color: #FFFFFF">聯繫我們</button>
+</div>
+</section>
+</div>
+
+<!-- ===================== 客製化開發 ===================== -->
+<div data-page="custom" hidden>
+<section style="background: #0F1A2E; color: #FFFFFF">
+<div style="max-width: 1200px; margin: 0 auto; padding: clamp(48px, 8vw, 104px) clamp(16px, 4vw, 48px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 56px; align-items: center">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.14em; color: #F2A33A">客製化開發</div>
+<h1 style="margin-top: 18px; font-size: clamp(32px, 4.6vw, 58px); line-height: 1.2; font-weight: 900">打造高效率、可持續擴展的數位營運架構</h1>
+<p style="margin-top: 28px; font-size: 18px; line-height: 1.95; color: #C9D2E0; max-width: 34em">從 ERP 串接、IMS 多通路整合、CMS 系統整合到軟硬體與既有企業系統整合，我們依企業營運需求規劃穩定的資料流與作業流程。</p>
+<div style="margin-top: 36px">
+<button type="button" class="btn" data-go="contact" style="min-height: 52px; padding: 0 28px; border-radius: 999px; border: 0; font-size: 16px; font-weight: 700; background: #F2A33A; color: #0F1A2E">洽詢客製化需求</button>
+</div>
+</div>
+<div style="background: #17284A; border: 1px solid #2A3D66; border-radius: 24px; padding: clamp(20px, 3vw, 32px)">
+<div style="font-size: 13px; font-weight: 700; letter-spacing: 0.14em; color: #9FB0CB">整合能力</div>
+<div style="display: flex; flex-direction: column; gap: 12px; margin-top: 18px">
+<div style="display: flex; align-items: center; gap: 14px; background: #0F1A2E; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #F2A33A"></span><span style="font-size: 18px; font-weight: 700">API串接文件</span></div>
+<div style="display: flex; align-items: center; gap: 14px; background: #0F1A2E; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #F2A33A"></span><span style="font-size: 18px; font-weight: 700">自有系統整合</span></div>
+<div style="display: flex; align-items: center; gap: 14px; background: #0F1A2E; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #F2A33A"></span><span style="font-size: 18px; font-weight: 700">模組化架構</span></div>
+<div style="display: flex; align-items: center; gap: 14px; background: #0F1A2E; border: 1px solid #2A3D66; border-radius: 14px; padding: 18px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #F2A33A"></span><span style="font-size: 18px; font-weight: 700">產業特化應用</span></div>
+</div>
+</div>
+</div>
+</section>
+
+<section>
+<div style="max-width: 1200px; margin: 0 auto; padding: clamp(56px, 8vw, 96px) clamp(16px, 4vw, 48px)">
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.14em; color: #5B667A">整合範圍</div>
+<h2 style="margin-top: 14px; font-size: clamp(28px, 3.6vw, 44px); line-height: 1.3; font-weight: 900; max-width: 18em">連結企業內外，讓資料自然流動</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px; margin-top: 44px">
+<div style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 36px)">
+<div style="font-size: 14px; font-weight: 700; color: #5B667A">ERP</div>
+<h3 style="margin-top: 12px; font-size: 26px; font-weight: 900">ERP 串接</h3>
+<p style="margin-top: 14px; font-size: 16px; line-height: 1.85; color: #3B475C">讓訂單、庫存與商品資料與企業核心系統保持一致。</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 36px)">
+<div style="font-size: 14px; font-weight: 700; color: #5B667A">IMS</div>
+<h3 style="margin-top: 12px; font-size: 26px; font-weight: 900">IMS 多通路整合</h3>
+<p style="margin-top: 14px; font-size: 16px; line-height: 1.85; color: #3B475C">整合多個銷售通路的庫存與訂單，集中管理、即時同步。</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 36px)">
+<div style="font-size: 14px; font-weight: 700; color: #5B667A">CMS</div>
+<h3 style="margin-top: 12px; font-size: 26px; font-weight: 900">CMS 系統整合</h3>
+<p style="margin-top: 14px; font-size: 16px; line-height: 1.85; color: #3B475C">串接內容與網站管理系統，讓前台體驗與營運資料同步。</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 20px; padding: clamp(24px, 3vw, 36px)">
+<div style="font-size: 14px; font-weight: 700; color: #5B667A">SYSTEM</div>
+<h3 style="margin-top: 12px; font-size: 26px; font-weight: 900">軟硬體與既有系統整合</h3>
+<p style="margin-top: 14px; font-size: 16px; line-height: 1.85; color: #3B475C">連結門市設備與既有企業系統，在原有架構上延伸擴充。</p>
+</div>
+</div>
+</div>
+</section>
+
+<section style="background: #F2A33A">
+<div style="max-width: 1200px; margin: 0 auto; padding: 44px clamp(16px, 4vw, 48px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 32px">
+<h2 style="font-size: clamp(24px, 3vw, 34px); line-height: 1.35; font-weight: 900; color: #0F1A2E">依企業營運需求，規劃專屬的整合方案</h2>
+<button type="button" class="btn" data-go="contact" style="min-height: 52px; padding: 0 30px; border-radius: 999px; border: 0; font-size: 16px; font-weight: 700; background: #0F1A2E; color: #FFFFFF">聯繫我們</button>
+</div>
+</section>
+</div>
+
+<!-- ===================== 聯繫我們 ===================== -->
+<div data-page="contact" hidden>
+<section>
+<div style="max-width: 1200px; margin: 0 auto; padding: clamp(48px, 7vw, 96px) clamp(16px, 4vw, 48px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: clamp(32px, 5vw, 72px); align-items: start">
+<div>
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 0.14em; color: #5B667A">聯繫我們</div>
+<h1 style="margin-top: 16px; font-size: clamp(34px, 4.6vw, 56px); line-height: 1.2; font-weight: 900">告訴我們您的需求</h1>
+<p style="margin-top: 24px; font-size: 18px; line-height: 1.9; color: #3B475C; max-width: 28em">請留下公司與聯絡人資訊，並簡述您想解決的營運問題，我們將依您的需求與您聯繫。</p>
+<div style="margin-top: 32px; padding: 22px 24px; border-radius: 16px; background: #FFFFFF; border: 1px solid #DDE3EC; max-width: 28em">
+<div style="font-size: 15px; font-weight: 700; color: #5B667A">公司資訊</div>
+<div style="margin-top: 10px; font-size: 16px; line-height: 1.95; color: #0F1A2E">亨起流通<br>統一編號：96762370<br>地址：台北市中山區雙城街19巷7號5樓<br>電子郵件：<a href="mailto:jon76639@gmail.com" style="color: #0F1A2E; font-weight: 700">jon76639@gmail.com</a></div>
+</div>
+<div style="margin-top: 16px; padding: 22px 24px; border-radius: 16px; background: #0F1A2E; color: #FFFFFF; max-width: 28em">
+<div style="font-size: 15px; font-weight: 700; color: #F2A33A">諮詢範圍</div>
+<div style="margin-top: 10px; font-size: 15px; line-height: 1.9; color: #C9D2E0">OMO 全通路整合開店<br>網路開店與 POS 門市整合<br>ERP、IMS、CMS 與既有系統客製化開發</div>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #DDE3EC; border-radius: 24px; padding: clamp(24px, 3.5vw, 44px)">
+<div id="formWrap">
+<form id="contactForm" novalidate style="display: flex; flex-direction: column; gap: 22px">
+<div style="font-size: 22px; font-weight: 900">聯絡資料</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="f-company" style="font-size: 15px; font-weight: 700">公司名稱 <span style="color: #B42318" aria-hidden="true">*</span></label>
+<input id="f-company" class="field" type="text" autocomplete="organization" aria-required="true" name="company" style="min-height: 50px; box-sizing: border-box; width: 100%; padding: 0 16px; border: 1.5px solid #8793A8; border-radius: 10px; font-size: 16px; color: #0F1A2E; background: #FFFFFF">
+<div role="alert" data-err="company" style="font-size: 14px; color: #B42318" hidden></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="f-taxid" style="font-size: 15px; font-weight: 700">統一編號 <span style="color: #B42318" aria-hidden="true">*</span></label>
+<input id="f-taxid" class="field" type="text" inputmode="numeric" maxlength="8" autocomplete="off" aria-required="true" placeholder="8 碼數字" name="taxId" style="min-height: 50px; box-sizing: border-box; width: 100%; padding: 0 16px; border: 1.5px solid #8793A8; border-radius: 10px; font-size: 16px; color: #0F1A2E; background: #FFFFFF">
+<div role="alert" data-err="taxId" style="font-size: 14px; color: #B42318" hidden></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="f-name" style="font-size: 15px; font-weight: 700">聯絡人姓名 <span style="color: #B42318" aria-hidden="true">*</span></label>
+<input id="f-name" class="field" type="text" autocomplete="name" aria-required="true" name="name" style="min-height: 50px; box-sizing: border-box; width: 100%; padding: 0 16px; border: 1.5px solid #8793A8; border-radius: 10px; font-size: 16px; color: #0F1A2E; background: #FFFFFF">
+<div role="alert" data-err="name" style="font-size: 14px; color: #B42318" hidden></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="f-phone" style="font-size: 15px; font-weight: 700">聯絡人電話 <span style="color: #B42318" aria-hidden="true">*</span></label>
+<input id="f-phone" class="field" type="tel" autocomplete="tel" aria-required="true" name="phone" style="min-height: 50px; box-sizing: border-box; width: 100%; padding: 0 16px; border: 1.5px solid #8793A8; border-radius: 10px; font-size: 16px; color: #0F1A2E; background: #FFFFFF">
+<div role="alert" data-err="phone" style="font-size: 14px; color: #B42318" hidden></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="f-email" style="font-size: 15px; font-weight: 700">聯絡人電子郵件 <span style="color: #B42318" aria-hidden="true">*</span></label>
+<input id="f-email" class="field" type="text" inputmode="email" autocomplete="email" aria-required="true" name="email" style="min-height: 50px; box-sizing: border-box; width: 100%; padding: 0 16px; border: 1.5px solid #8793A8; border-radius: 10px; font-size: 16px; color: #0F1A2E; background: #FFFFFF">
+<div role="alert" data-err="email" style="font-size: 14px; color: #B42318" hidden></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="f-message" style="font-size: 15px; font-weight: 700">需求說明 <span style="color: #B42318" aria-hidden="true">*</span></label>
+<textarea id="f-message" class="field" aria-required="true" name="message" style="min-height: 150px; box-sizing: border-box; width: 100%; padding: 14px 16px; border: 1.5px solid #8793A8; border-radius: 10px; font-size: 16px; line-height: 1.7; color: #0F1A2E; background: #FFFFFF; resize: vertical"></textarea>
+<div role="alert" data-err="message" style="font-size: 14px; color: #B42318" hidden></div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-top: 4px">
+<div style="font-size: 14px; color: #5B667A">* 為必填欄位</div>
+<button type="submit" class="btn" style="min-height: 52px; padding: 0 36px; border-radius: 999px; border: 0; font-size: 16px; font-weight: 700; background: #F2A33A; color: #0F1A2E">送出</button>
+</div>
+</form>
+</div>
+
+<div id="doneWrap" hidden>
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 24px 0">
+<svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="26" fill="#0F1A2E"></circle><path d="M15 27 L23 35 L38 18" stroke="#F2A33A" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<h2 style="font-size: 28px; font-weight: 900">感謝您的來信</h2>
+<p style="font-size: 17px; line-height: 1.85; color: #3B475C"><span id="doneName"></span> 您好，我們將依您填寫的資料與您聯繫。</p>
+<div>
+<button type="button" class="ghostd" id="resetBtn" style="min-height: 48px; padding: 0 24px; border-radius: 999px; border: 1.5px solid #0F1A2E; font-size: 15px; font-weight: 700; background: transparent; color: #0F1A2E">再填寫一份</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+
+</main>
+
+<!-- FOOTER -->
+<footer style="background: #0F1A2E; color: #9FB0CB">
+<div style="max-width: 1200px; margin: 0 auto; padding: 32px clamp(16px, 4vw, 48px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; font-size: 14px">
+<div style="display: flex; align-items: center; gap: 10px; color: #FFFFFF; font-weight: 700; font-size: 16px">
+<svg width="26" height="26" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#17284A"></rect><path d="M9 22 L17 11 L25 22" stroke="#F2A33A" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+亨起流通
+</div>
+<div style="line-height: 1.9; text-align: right">
+<div>統一編號：96762370</div>
+<div>地址：台北市中山區雙城街19巷7號5樓</div>
+<div>電子郵件：<a href="mailto:jon76639@gmail.com" style="color: #FFFFFF">jon76639@gmail.com</a></div>
+<div>© 2026 亨起流通 All rights reserved.</div>
+</div>
+</div>
 </footer>
 
+</div>
+
+<script>
+(function(){
+  var PAGES=['about','product','custom','contact'];
+  var TITLES={about:'關於亨起',product:'產品',custom:'客製化開發',contact:'聯繫我們'};
+  var base='min-height:44px;padding:0 18px;border-radius:999px;border:0;font-size:15px;font-weight:500;';
+  function show(p){
+    if(PAGES.indexOf(p)<0)p='about';
+    document.querySelectorAll('[data-page]').forEach(function(el){el.hidden=el.getAttribute('data-page')!==p;});
+    document.querySelectorAll('[data-nav]').forEach(function(b){
+      var on=b.getAttribute('data-nav')===p;
+      b.setAttribute('style',on?base+'background:#0F1A2E;color:#FFFFFF;font-weight:700;':base+'background:transparent;color:#3B475C;');
+      if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
+    });
+    document.title=(p==='about'?'':TITLES[p]+' | ')+'亨起流通';
+  }
+  function go(p){ if(location.hash!=='#'+p)location.hash=p; else show(p); window.scrollTo(0,0); }
+  document.addEventListener('click',function(e){
+    var t=e.target.closest('[data-go]'); if(!t)return; e.preventDefault(); go(t.getAttribute('data-go'));
+  });
+  window.addEventListener('hashchange',function(){show(location.hash.slice(1));window.scrollTo(0,0);});
+  show(location.hash.slice(1));
+
+  var form=document.getElementById('contactForm');
+  function check(v){
+    function t(x){return (x||'').trim();}
+    return {
+      company:t(v.company)?'':'請填寫公司名稱',
+      taxId:/^\d{8}$/.test(t(v.taxId))?'':'請輸入 8 碼數字的統一編號',
+      name:t(v.name)?'':'請填寫聯絡人姓名',
+      phone:/^[0-9+\-\s()#]{8,}$/.test(t(v.phone))?'':'請填寫有效的聯絡人電話',
+      email:/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t(v.email))?'':'請填寫有效的電子郵件',
+      message:t(v.message)?'':'請簡述您的需求'
+    };
+  }
+  function values(){var o={};['company','taxId','name','phone','email','message'].forEach(function(k){o[k]=form.elements[k].value;});return o;}
+  function paint(er){
+    document.querySelectorAll('[data-err]').forEach(function(el){
+      var m=er[el.getAttribute('data-err')]||'';el.textContent=m;el.hidden=!m;
+    });
+  }
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var v=values(),er=check(v);paint(er);
+    var bad=Object.keys(er).filter(function(k){return er[k];});
+    if(bad.length){form.elements[bad[0]].focus();return;}
+    document.getElementById('doneName').textContent=v.name.trim();
+    document.getElementById('formWrap').hidden=true;
+    document.getElementById('doneWrap').hidden=false;
+  });
+  document.getElementById('resetBtn').addEventListener('click',function(){
+    form.reset();paint({});
+    document.getElementById('doneWrap').hidden=true;
+    document.getElementById('formWrap').hidden=false;
+  });
+})();
+</script>
 </body>
 </html>
